@@ -159,6 +159,42 @@ class TestPlottingDendrogram(unittest.TestCase):
             "A": [2.5, 3],
             "B": [3.5, 4],
         }
+
+        self.test_case_3_lines = [
+            [[0, 0], [1.5, 4.875]],
+            [[0, 1], [1.5, 1.5]],
+            [[0, 2], [4.875, 4.875]],
+            [[1, 1], [0.5, 2.5]],
+            [[1, 2], [0.5, 0.5]],
+            [[1, 3], [2.5, 2.5]],
+            [[2, 2], [0, 1]],
+            [[2, 4], [0, 0]],
+            [[2, 5], [1, 1]],
+            [[3, 3], [2, 3]],
+            [[3, 4], [2, 2]],
+            [[3, 7], [3, 3]],
+            [[2, 2], [4, 5.75]],
+            [[2, 5], [4, 4]],
+            [[2, 3], [5.75, 5.75]],
+            [[3, 3], [5, 6.5]],
+            [[3, 5], [5, 5]],
+            [[3, 5], [6.5, 6.5]],
+            [[5, 5], [6, 7]],
+            [[5, 6], [6, 6]],
+            [[5, 8], [7, 7]],
+            [[-0.2, 0], [3.1875, 3.1875]],
+        ]
+        self.test_case_3_leaf_labels = {
+            "A": [4, 0],
+            "B": [5, 1],
+            "C": [4, 2],
+            "D": [7, 3],
+            "E": [5, 4],
+            "F": [5, 5],
+            "G": [6, 6],
+            "H": [8, 7],
+        }
+
         self.tree_1 = Node(
             "ROOT",
             left=Node(
@@ -258,6 +294,53 @@ class TestPlottingDendrogram(unittest.TestCase):
             right_distance=0.5,
         )
 
+        def leaf(name: str) -> Node:
+            return Node(name, None, 0, None, 0)
+
+        self.tree_3 = Node(
+            "ROOT",
+            left=Node(
+                "X",
+                left=Node(
+                    "X1",
+                    left=leaf("A"),
+                    left_distance=2,
+                    right=leaf("B"),
+                    right_distance=3,
+                ),
+                left_distance=1,
+                right=Node(
+                    "X2",
+                    left=leaf("C"),
+                    left_distance=1,
+                    right=leaf("D"),
+                    right_distance=4,
+                ),
+                right_distance=2,
+            ),
+            left_distance=1,
+            right=Node(
+                "Y",
+                left=leaf("E"),
+                left_distance=3,
+                right=Node(
+                    "Y1",
+                    left=leaf("F"),
+                    left_distance=2,
+                    right=Node(
+                        "Y2",
+                        left=leaf("G"),
+                        left_distance=1,
+                        right=leaf("H"),
+                        right_distance=3,
+                    ),
+                    right_distance=2,
+                ),
+                right_distance=1,
+            ),
+            right_distance=2,
+        )
+
     def plot_gt_lines(self, lines: list, leaf_labels: dict, ax):
 
         for line in lines:
@@ -281,7 +364,7 @@ class TestPlottingDendrogram(unittest.TestCase):
         from helper_functions import plot_nj_tree
         import matplotlib.pyplot as plt
 
-        f, ax = plt.subplots(2, 2, figsize=(10, 7))
+        f, ax = plt.subplots(2, 3, figsize=(15, 7))
 
         self.plot_gt_lines(
             self.test_case_1_lines, self.test_case_1_leaf_labels, ax[0][0]
@@ -289,12 +372,17 @@ class TestPlottingDendrogram(unittest.TestCase):
         self.plot_gt_lines(
             self.test_case_2_lines, self.test_case_2_leaf_labels, ax[0][1]
         )
+        self.plot_gt_lines(
+            self.test_case_3_lines, self.test_case_3_leaf_labels, ax[0][2]
+        )
 
         plot_nj_tree(self.tree_1, ax=ax[1][0])
         plot_nj_tree(self.tree_2, ax=ax[1][1])
+        plot_nj_tree(self.tree_3, ax=ax[1][2])
 
         ax[0][0].set_title("Test Case 1", fontsize=12)
         ax[0][1].set_title("Test Case 2", fontsize=12)
+        ax[0][2].set_title("Test Case 3", fontsize=12)
 
         ax[0][0].set_ylabel("Ground truth", fontsize=12)
         ax[1][0].set_ylabel("Your implementation", fontsize=12)

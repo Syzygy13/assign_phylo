@@ -2,7 +2,7 @@
 import numpy as np
 from copy import deepcopy
 from matplotlib.axes import Axes
-
+import matplotlib.pyplot as plt
 
 class Node:
     def __init__(
@@ -172,6 +172,45 @@ def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
     >>> fig.savefig("example.png")
 
     """
+    if ax is None:
+        _, ax = plt.subplots(figsize=(8, 8))
+
+    # Use an array as ints would be locally updated and not persist across recursive calls
+    next_leaf_row = [0]
+    # Use recursion to draw the tree. Create a node if there are no children otherwise traverse left then right
+    def draw_subtree(node: Node, x: float) -> float:
+        # Create the leaf node and return the y position on the graph
+        if node.left is None and node.right is None:
+            y = next_leaf_row[0]
+            next_leaf_row[0] += 1
+            ax.annotate(node.name, (x, y))
+            return y
+
+        # Recursive calls to increase length of the branches and draw nodes
+        left_dist = x + node.left_distance
+        right_dist = x + node.right_distance
+        left_y = draw_subtree(node.left, left_dist)
+        right_y = draw_subtree(node.right, right_dist)
+
+        # Vertical connector between the children, then a horizontal branch to each
+        ax.plot([x, x], [left_y, right_y], color="red", linewidth=1)
+        ax.plot([x, left_dist], [left_y, left_y], color="green", linewidth=1)
+        ax.plot([x, right_dist], [right_y, right_y], color="purple", linewidth=1)
+
+        # Root y-value
+        return (left_y + right_y) / 2
+
+    # Draw tree and get the height of the root node
+    root_y = draw_subtree(tree, 0.0)
+
+    # Short point for the root on the left of plot
+    ax.plot([-0.5, 0], [root_y, root_y], color="black", linewidth=1)
+
+    # General plot information
+    ax.set_yticks(list(range(next_leaf_row[0])))
+    ax.set_xlabel("Genetic distance")
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
 
     return ax
 
