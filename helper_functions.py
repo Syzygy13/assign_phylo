@@ -71,9 +71,82 @@ def neighbor_joining(distances: np.ndarray, labels: list) -> Node:
 
     """
     
-    self.tree = Node()
+    # Initialise distance matrix and node list
+    distance_matrix = np.array(distances, dtype=float)
+    node_list = []
+    for label in labels:
+        node_list.append(Node(str(label), None, 0.0, None, 0.0))
+    node_count = 0
 
-    raise NotImplementedError()
+    if len(node_list) == 1:
+        return node_list[0]
+
+    # Stop at 2 nodes remaining to make root
+    while len(node_list) > 2:
+        num = len(node_list)
+
+        # Sum of distances from each node to all others
+        row_sums = distance_matrix.sum(axis=1)
+
+        # Q_ij = (n - 2) * D_ij - sum_n_k(D_ik) - sum_n_k(D_jk)
+        # Use inf instead of 0 to help finding the minimum value in Q matrix
+        q_matrix = (num - 2) * distance_matrix - row_sums[:, None] - row_sums[None, :]
+        np.fill_diagonal(q_matrix, np.inf)
+
+        # Smallest value in Q value's index is the pair to combine
+        i, j = np.unravel_index(np.argmin(q_matrix), q_matrix.shape)
+
+        pair_distance = distance_matrix[i, j]
+
+        # Distance from each joined node to the new parent node:
+        # Delta_iu = D_ij / 2 + (sum_n_k(D_ik) - sum_n_k(D_jk)) / (2 * (n - 2))
+        first_branch_length = 0.5 * pair_distance + (row_sums[i] - row_sums[j]) / (2 * (num - 2))
+        second_branch_length = pair_distance - first_branch_length
+
+        # Create the combined node and increase node count for naming
+        new_node = Node(
+            f"{node_count}",
+            node_list[i],
+            float(first_branch_length),
+            node_list[j],
+            float(second_branch_length),
+        )
+        node_count += 1
+
+        # Distance from the new node to every other node:
+        # D_uk = (D_ik + D_jk - D_ij) / 2
+        remaining_indices = []
+        for index in range(num):
+            if index not in (i, j):
+                remaining_indices.append(index)
+
+        distances_to_new_node = []
+        for index in remaining_indices:
+            distance_to_new_node = 0.5 * (
+                distance_matrix[i, index] + distance_matrix[j, index] - pair_distance
+            )
+            distances_to_new_node.append(distance_to_new_node)
+
+        # New matrix of zeroes then updated distances and append the new node at the end
+        remove_combined_matrix = distance_matrix[np.ix_(remaining_indices, remaining_indices)]
+        updated_matrix = np.zeros((num - 1, num - 1))
+        updated_matrix[:-1, :-1] = remove_combined_matrix
+        updated_matrix[-1, :-1] = distances_to_new_node
+        updated_matrix[:-1, -1] = distances_to_new_node
+
+        distance_matrix = updated_matrix
+        node_list = [node_list[index] for index in remaining_indices]
+        node_list.append(new_node)
+
+    # Join the last two nodes under a root node
+    root_distance = float(distance_matrix[0, 1]) / 2
+    return Node(
+        "ROOT",
+        node_list[0],
+        root_distance,
+        node_list[1],
+        root_distance,
+    )
 
 
 def plot_nj_tree(tree: Node, ax: Axes = None, **kwargs) -> None:
