@@ -305,7 +305,41 @@ def sort_children_by_leaves(tree: Node) -> None:
         The root node of the tree.
 
     """
-    raise NotImplementedError()
+    # Loop to go through every node. Parents are stored prior to their children
+    nodes_in_order = []
+    nodes_to_visit = [tree]
+    while len(nodes_to_visit) > 0:
+        current_node = nodes_to_visit.pop()
+        nodes_in_order.append(current_node)
+
+        if current_node.left is not None:
+            nodes_to_visit.append(current_node.left)
+        if current_node.right is not None:
+            nodes_to_visit.append(current_node.right)
+
+    # Look through node list and find number of children each node has
+    num_children = {}
+    for current_node in reversed(nodes_in_order):
+
+        # If the node is a leaf then it only counts itself. Done prior to parent of leaves
+        if current_node.left is None and current_node.right is None:
+            num_children[current_node] = 1
+            continue
+
+        # Parent nodes have value equal to the number of children of their children
+        left_count = num_children[current_node.left]
+        right_count = num_children[current_node.right]
+        num_children[current_node] = left_count + right_count
+
+        # Reorganise the tree based on number of children. Fewer children is further down on the plot
+        if left_count > right_count:
+            temp_node = current_node.left
+            current_node.left = current_node.right
+            current_node.right = temp_node
+
+            temp_distance = current_node.left_distance
+            current_node.left_distance = current_node.right_distance
+            current_node.right_distance = temp_distance
 
 
 def plot_nj_tree_radial(tree: Node, ax: Axes = None, **kwargs) -> None:
